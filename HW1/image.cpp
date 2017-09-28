@@ -88,7 +88,20 @@ void Image::Write(char* fname){
 
 void Image::AddNoise (double factor)
 {
-	/* WORK HERE */
+  double range = factor;
+  double noise;
+    int x,y;
+  	for (x = 0 ; x < Width() ; x++)
+  	{
+  		for (y = 0 ; y < Height() ; y++)
+  		{
+        noise = pow(fabs(((double)rand() / (double) (RAND_MAX))*range - 1) , 8);
+  			Pixel p = GetPixel(x, y);
+  			Pixel scaled_p;
+        scaled_p.SetClamp(p.r*noise,p.g*noise,p.b*noise);
+  			GetPixel(x,y) = scaled_p;
+  		}
+  	}
 }
 
 void Image::Brighten (double factor)
@@ -110,7 +123,7 @@ void Image::ChangeContrast (double factor)
 {
 	/* WORK HERE */
   int x,y;
-  double sum = 0, mean = 0;
+  long double sum = 0, mean = 0;
 
   for (x = 0 ; x < Width() ; x++)
   {
@@ -125,10 +138,11 @@ void Image::ChangeContrast (double factor)
   {
     for (y = 0 ; y < Height() ; y++)
     {
-      double a;
       Pixel p = GetPixel(x, y);
 			Pixel scaled_p;
-      scaled_p.SetClamp(factor*p.r+mean,factor*p.g+mean,factor*p.b+mean);
+      // mean = p.Luminance();
+      // mean+(p.r-mean)*(factor)
+      scaled_p.SetClamp(mean+(p.r-mean)*(factor),mean+(p.g-mean)*(factor),mean+(p.b-mean)*(factor));
 			GetPixel(x,y) = scaled_p;
     }
   }
@@ -139,20 +153,76 @@ void Image::ChangeContrast (double factor)
 void Image::ChangeSaturation(double factor)
 {
 	/* WORK HERE */
+    int x,y;
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      double a;
+      Pixel p = GetPixel(x, y);
+      Pixel scaled_p;
+      a = sqrt(p.r * p.r *0.299 + p.g*p.g*0.587+p.b*p.b*0.144);
+      scaled_p.SetClamp(a+(p.r -a)*factor,a+(p.g -a)*factor,a+(p.b -a)*factor );
+      GetPixel(x,y) = scaled_p;
+    }
+  }
 }
 
 
 Image* Image::Crop(int x, int y, int w, int h)
 {
 	/* WORK HERE */
-	return NULL;
+  Image* i = new Image(w,h);
+
+  int a,b;
+  for (a = 0 ; a < w ; a++)
+  {
+    for (b = 0 ; b < h ;b++)
+    {
+      Pixel p = GetPixel(x+a,y+b);
+      i->SetPixel(a,b,p);
+    }
+  }
+  // int a,b;
+  // for (a = x ; a < i->Width() ; a = a + ((Width())/(i->Width())))
+  // {
+  //   for (b = y ; b < i->Height() ; b = b + ((Height())/(i->Height())))
+  //   {
+  //     Pixel p = GetPixel((a-x)*(i->Width()), (b-y)*(i->Height()));
+  //     i->SetPixel(a,b,p);
+  //   }
+  // }
+	return i;
 }
 
 
 void Image::ExtractChannel(int channel)
 {
 	/* WORK HERE */
+  int x,y;
+	for (x = 0 ; x < Width() ; x++)
+	{
+		for (y = 0 ; y < Height() ; y++)
+		{
+			Pixel p = GetPixel(x, y);
+			Pixel scaled_p;
+      if(channel == 1)
+      {
+      scaled_p.SetClamp(p.r,0,0);
+    }
+    if(channel == 2)
+    {
+            scaled_p.SetClamp(0,p.g,0);
+    }
+    if(channel == 3)
+    {
+            scaled_p.SetClamp(0,0,p.b);
+    }
+			GetPixel(x,y) = scaled_p;
+		}
+	}
 }
+
 
 
 void Image::Quantize (int nbits)
@@ -195,10 +265,42 @@ void Image::FloydSteinbergDither(int nbits)
 void Image::Blur(int n)
 {
 	/* WORK HERE */
+  int x,y;
+  int r = n/2;
+  double sigma = 1 / (6*(pow(r,2))+4*r+1) ;
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      Pixel p = GetPixel(x, y);
+      // scaled_p.SetClamp(pow(2, -(pow ((p.r/sigma),2))),
+      // pow(2, -(pow ((p.g/sigma),2))),
+      // pow(2, -(pow ((p.b/sigma),2))));
+      Pixel scaled_p;
+      this -> SetPixel(pow(2, -(pow ((x/sigma),2))),pow(2, -(pow ((x/sigma),2))),scaled_p);
+      // GetPixel(x,y) =  scaled_p;
+    }
+  }
 }
 
 void Image::Sharpen(int n)
 {
+  // if(n >= -1 || n <= 1)
+  // {
+  //   int x,y;
+  //   for (x = 0 ; x < Width() ; x++)
+  //   {
+  //     for (y = 0 ; y < Height() ; y++)
+  //     {
+  //       Pixel p = GetPixel(x, y);
+  //       Pixel scaled_p;
+  //       scaled_p.SetClamp(0.5*((-3)*pow((1-fabs(p.r)), 3)+4*(pow(1-fabs(p.r),2)) + (1 - fabs(p.r))),
+  //       0.5*((-3)*pow((1-fabs(p.g)), 3)+4*(pow(1-fabs(p.g),2)) + (1 - fabs(p.g))),
+  //       0.5*((-3)*pow((1-fabs(p.b)), 3)+4*(pow(1-fabs(p.b),2)) + (1 - fabs(p.b))) );
+  //       GetPixel(x,y) = scaled_p;
+  //     }
+  //   }
+  // }
 	/* WORK HERE */
 }
 
