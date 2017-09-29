@@ -273,9 +273,6 @@ void Image::Blur(int n)
     for (y = 0 ; y < Height() ; y++)
     {
       Pixel p = GetPixel(x, y);
-      // scaled_p.SetClamp(pow(2, -(pow ((p.r/sigma),2))),
-      // pow(2, -(pow ((p.g/sigma),2))),
-      // pow(2, -(pow ((p.b/sigma),2))));
       Pixel scaled_p;
       this -> SetPixel(pow(2, -(pow ((x/sigma),2))),pow(2, -(pow ((x/sigma),2))),scaled_p);
       // GetPixel(x,y) =  scaled_p;
@@ -304,10 +301,51 @@ void Image::Sharpen(int n)
 	/* WORK HERE */
 }
 
+static int edge[3][3] =
+{
+    {-1,  -1, -1},
+    {-1,  8,  -1},
+    {-1,  -1, -1}
+};
 void Image::EdgeDetect()
 {
 	/* WORK HERE */
+  int x,y;
+  long double sum1 = 0, sum2 = 0, sum3 = 0;
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      for (int a = 0; a < 3 ;a++)
+      {
+        for (int b = 0; b < 3 ;b++)
+        {
+      Pixel p = GetPixel(a, b);
+      sum1 = sum1 + (p.r * edge[x-a][y-b]);
+      sum2 = sum2 + (p.g * edge[x-a][y-b]);
+      sum3 = sum3 + (p.b * edge[x-a][y-b]);
+      Pixel scaled_p;
+      scaled_p.SetClamp(sum1,sum2,sum3);
+      GetPixel(a,b) = scaled_p;
+        }
+      }
+      // Pixel p = GetPixel(x, y);
+
+    }
+  }
+  // int q,w;
+  // for (q = 0 ; q < Width() ; q++)
+  // {
+  //   for (w = 0 ; w < Height() ; w++)
+  //   {
+  //     Pixel p = GetPixel(q, w);
+  //     Pixel scaled_p;
+  //     scaled_p.SetClamp(sum1,sum2,sum3);
+  //     GetPixel(q,w) = scaled_p;
+  //   }
+  // }
 }
+
 
 Image* Image::Scale(double sx, double sy)
 {
