@@ -95,10 +95,13 @@ void Image::AddNoise (double factor)
   	{
   		for (y = 0 ; y < Height() ; y++)
   		{
-        noise = pow(fabs(((double)rand() / (double) (RAND_MAX))*range - 1) , 8);
+    //    noise = pow(fabs(((double)rand() / (double) (RAND_MAX))*range - 1) , 8);
   			Pixel p = GetPixel(x, y);
   			Pixel scaled_p;
-        scaled_p.SetClamp(p.r*noise,p.g*noise,p.b*noise);
+        scaled_p.SetClamp(p.r + factor*PixelRandom().r,
+        p.g+factor*PixelRandom().g,
+        p.b+factor*PixelRandom().b );
+         //    scaled_p.SetClamp(p.r*noise,p.g*noise,p.b*noise);
   			GetPixel(x,y) = scaled_p;
   		}
   	}
@@ -173,7 +176,6 @@ Image* Image::Crop(int x, int y, int w, int h)
 {
 	/* WORK HERE */
   Image* i = new Image(w,h);
-
   int a,b;
   for (a = 0 ; a < w ; a++)
   {
@@ -228,11 +230,33 @@ void Image::ExtractChannel(int channel)
 void Image::Quantize (int nbits)
 {
 	/* WORK HERE */
+  int x,y;
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      Pixel p = GetPixel(x, y);
+      Pixel scaled_p =PixelQuant(p,nbits);
+      GetPixel(x,y) = scaled_p;
+    }
+  }
+
 }
 
 void Image::RandomDither (int nbits)
 {
 	/* WORK HERE */
+  int x,y;
+  float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      Pixel p = GetPixel(x, y);
+      Pixel scaled_p = PixelQuantN(p,nbits);
+      GetPixel(x,y) = scaled_p;
+    }
+  }
 }
 
 
@@ -247,6 +271,22 @@ static int Bayer4[4][4] =
 
 void Image::OrderedDither(int nbits)
 {
+  int l = pow(2,nbits);
+  double a = 256 / l;
+  double b = 255.0/(l - 1);
+  int x,y;
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      Pixel p = GetPixel(x, y);
+      p.SetClamp((p.r / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b,
+      (p.g / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b,
+      (p.b / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b);
+      GetPixel(x,y) = p;
+    }
+  }
+
 	/* WORK HERE */
 }
 
@@ -259,6 +299,23 @@ const double
 
 void Image::FloydSteinbergDither(int nbits)
 {
+  int x,y;
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      Pixel p = GetPixel(x, y);
+      Pixel scaled_p =PixelQuant(p,nbits);
+    //  std :: cout << diff ;
+      GetPixel(x, y) = scaled_p;
+      Pixel diff =  scaled_p + p;
+       GetPixel(x+1,y) + ALPHA * diff;
+     GetPixel(x-1,y+1) + BETA * diff;
+         GetPixel(x,y+1) + GAMMA * diff;
+        GetPixel(x+1,y+1) + DELTA * diff;
+
+    }
+  }
 	/* WORK HERE */
 }
 
@@ -312,25 +369,25 @@ void Image::EdgeDetect()
 	/* WORK HERE */
   int x,y;
   long double sum1 = 0, sum2 = 0, sum3 = 0;
-  for (x = 0 ; x < Width() ; x++)
+  for (x = 0 ; x < Width() -1 ; x++)
   {
-    for (y = 0 ; y < Height() ; y++)
+    for (y = 0 ; y < Height() -1 ; y++)
     {
-      for (int a = 0; a < 3 ;a++)
+      for (int a = 0; a <= 2 ;a++)
       {
-        for (int b = 0; b < 3 ;b++)
+        for (int b = 0; b <= 2  ;b++)
         {
-      Pixel p = GetPixel(a, b);
-      sum1 = sum1 + (p.r * edge[x-a][y-b]);
-      sum2 = sum2 + (p.g * edge[x-a][y-b]);
-      sum3 = sum3 + (p.b * edge[x-a][y-b]);
-      Pixel scaled_p;
-      scaled_p.SetClamp(sum1,sum2,sum3);
-      GetPixel(a,b) = scaled_p;
+          Pixel p = GetPixel(a, b);
+          sum1 = sum1 + (p.r * edge[x-a][y-b]);
+          sum2 = sum2 + (p.g * edge[x-a][y-b]);
+          sum3 = sum3 + (p.b * edge[x-a][y-b]);
+
         }
       }
       // Pixel p = GetPixel(x, y);
-
+      Pixel scaled_p;
+      scaled_p.SetClamp(sum1,sum2,sum3);
+      GetPixel(x,y) = scaled_p;
     }
   }
   // int q,w;

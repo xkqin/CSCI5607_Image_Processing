@@ -71,5 +71,6 @@ Pixel operator* (const Pixel& p, double f);
 Pixel PixelLerp (const Pixel& p, const Pixel& q, double t);
 
 Pixel PixelQuant(const Pixel &p, int nbits);
+Pixel PixelQuantN( const Pixel &p, int nbits);
 
 #endif
