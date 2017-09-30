@@ -185,15 +185,6 @@ Image* Image::Crop(int x, int y, int w, int h)
       i->SetPixel(a,b,p);
     }
   }
-  // int a,b;
-  // for (a = x ; a < i->Width() ; a = a + ((Width())/(i->Width())))
-  // {
-  //   for (b = y ; b < i->Height() ; b = b + ((Height())/(i->Height())))
-  //   {
-  //     Pixel p = GetPixel((a-x)*(i->Width()), (b-y)*(i->Height()));
-  //     i->SetPixel(a,b,p);
-  //   }
-  // }
 	return i;
 }
 
@@ -240,23 +231,24 @@ void Image::Quantize (int nbits)
       GetPixel(x,y) = scaled_p;
     }
   }
-
 }
 
 void Image::RandomDither (int nbits)
 {
 	/* WORK HERE */
   int x,y;
-  float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
+//  float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
+
   for (x = 0 ; x < Width() ; x++)
   {
     for (y = 0 ; y < Height() ; y++)
     {
       Pixel p = GetPixel(x, y);
-      Pixel scaled_p = PixelQuantN(p,nbits);
+      Pixel scaled_p = PixelQuant(p,nbits);
       GetPixel(x,y) = scaled_p;
     }
   }
+  this -> AddNoise(1);
 }
 
 
@@ -286,7 +278,6 @@ void Image::OrderedDither(int nbits)
       GetPixel(x,y) = p;
     }
   }
-
 	/* WORK HERE */
 }
 
@@ -306,7 +297,6 @@ void Image::FloydSteinbergDither(int nbits)
     {
       Pixel p = GetPixel(x, y);
       Pixel scaled_p =PixelQuant(p,nbits);
-    //  std :: cout << diff ;
       GetPixel(x, y) = scaled_p;
       Pixel diff =  scaled_p + p;
        GetPixel(x+1,y) + ALPHA * diff;
@@ -319,42 +309,78 @@ void Image::FloydSteinbergDither(int nbits)
 	/* WORK HERE */
 }
 
+float gaussian(float x,float y)
+{
+    return 1.0/(2*3.1415926)*exp(-(x*x+y*y)/2.0);
+}
+
 void Image::Blur(int n)
 {
 	/* WORK HERE */
-  int x,y;
-  int r = n/2;
-  double sigma = 1 / (6*(pow(r,2))+4*r+1) ;
-  for (x = 0 ; x < Width() ; x++)
+  Image* z = new Image (Width(),Height());
+  for (int i = 0; i < Width(); i++)
   {
-    for (y = 0 ; y < Height() ; y++)
+    for(int j=0; j<Height(); j++)
     {
-      Pixel p = GetPixel(x, y);
-      Pixel scaled_p;
-      this -> SetPixel(pow(2, -(pow ((x/sigma),2))),pow(2, -(pow ((x/sigma),2))),scaled_p);
-      // GetPixel(x,y) =  scaled_p;
+     z->SetPixel(i,j,this->GetPixel(i,j));
+    }
+  }
+  int x,y;
+  for (x = n ; x <= Width()-n-1 ; x++)
+  {
+    for (y = n; y <= Height()-n-1 ; y++)
+    {
+         double pr=0;
+         double pg=0;
+         double pb=0;
+      for (int a = x-n; a <=  x+n; a++)
+      {
+        for (int b = y-n; b <= y+n; b++)
+        {
+          pr += float(z -> GetPixel(a,b).r)*gaussian(x-a,y-b);
+          pg += float(z -> GetPixel(a,b).g)*gaussian(x-a,y-b);
+          pb += float(z -> GetPixel(a,b).b)*gaussian(x-a,y-b);
+        }
+      }
+      Pixel p;
+      if(pr < 0 || pb <0 || pg <0)
+      {
+        pr =0;
+        pg =0;
+        pb =0;
+      }
+      p.Set(pr,pg,pb);
+      SetPixel(x,y,p);
     }
   }
 }
 
 void Image::Sharpen(int n)
 {
-  // if(n >= -1 || n <= 1)
-  // {
-  //   int x,y;
-  //   for (x = 0 ; x < Width() ; x++)
-  //   {
-  //     for (y = 0 ; y < Height() ; y++)
-  //     {
-  //       Pixel p = GetPixel(x, y);
-  //       Pixel scaled_p;
-  //       scaled_p.SetClamp(0.5*((-3)*pow((1-fabs(p.r)), 3)+4*(pow(1-fabs(p.r),2)) + (1 - fabs(p.r))),
-  //       0.5*((-3)*pow((1-fabs(p.g)), 3)+4*(pow(1-fabs(p.g),2)) + (1 - fabs(p.g))),
-  //       0.5*((-3)*pow((1-fabs(p.b)), 3)+4*(pow(1-fabs(p.b),2)) + (1 - fabs(p.b))) );
-  //       GetPixel(x,y) = scaled_p;
-  //     }
-  //   }
-  // }
+  Image* z = new Image (Width(),Height());
+  for (int i = 0; i < Width(); i++)
+  {
+    for(int j=0; j<Height(); j++)
+    {
+     z->SetPixel(i,j,this->GetPixel(i,j));
+    }
+  }
+  z -> Blur(n);
+  int x,y;
+  for (x = 0 ; x < Width() ; x++)
+  {
+    for (y = 0 ; y < Height() ; y++)
+    {
+      Pixel p = GetPixel(x, y);
+      Pixel scaled_p;
+      scaled_p.SetClamp(ComponentLerp(z -> GetPixel(x,y).r,this->GetPixel(x,y).r,n),
+    ComponentLerp(z -> GetPixel(x,y).g,this->GetPixel(x,y).g,n),
+  ComponentLerp(z -> GetPixel(x,y).b,this->GetPixel(x,y).b,n));
+  GetPixel(x,y) = scaled_p;
+
+    }
+  }
+
 	/* WORK HERE */
 }
 
@@ -368,46 +394,104 @@ void Image::EdgeDetect()
 {
 	/* WORK HERE */
   int x,y;
-  long double sum1 = 0, sum2 = 0, sum3 = 0;
-  for (x = 0 ; x < Width() -1 ; x++)
+  Image* z = new Image (Width(),Height());
+  for (int i = 0; i < Width(); i++)
   {
-    for (y = 0 ; y < Height() -1 ; y++)
+    for(int j=0; j<Height(); j++)
     {
-      for (int a = 0; a <= 2 ;a++)
-      {
-        for (int b = 0; b <= 2  ;b++)
-        {
-          Pixel p = GetPixel(a, b);
-          sum1 = sum1 + (p.r * edge[x-a][y-b]);
-          sum2 = sum2 + (p.g * edge[x-a][y-b]);
-          sum3 = sum3 + (p.b * edge[x-a][y-b]);
+     z->SetPixel(i,j,this->GetPixel(i,j));
+    }
+  }
 
-        }
-      }
-      // Pixel p = GetPixel(x, y);
-      Pixel scaled_p;
-      scaled_p.SetClamp(sum1,sum2,sum3);
+
+  for (x = 0 ; x < Width() ; x++)
+  {
+
+    for (y = 0 ; y < Height() ; y++)
+    {
+      Pixel p = GetPixel(x, y);
+      Pixel scaled_p = p*0.01;
       GetPixel(x,y) = scaled_p;
     }
   }
-  // int q,w;
-  // for (q = 0 ; q < Width() ; q++)
-  // {
-  //   for (w = 0 ; w < Height() ; w++)
-  //   {
-  //     Pixel p = GetPixel(q, w);
-  //     Pixel scaled_p;
-  //     scaled_p.SetClamp(sum1,sum2,sum3);
-  //     GetPixel(q,w) = scaled_p;
-  //   }
-  // }
+
+  for (x = 1 ; x < Width()-1 ; x++)
+  {
+
+    for (y = 1 ; y < Height()-1 ; y++)
+    {
+         double pr=0;
+         double pg=0;
+         double pb=0;
+      for (int a = x-1; a <=  x+1  ;a++)
+      {
+        for (int b = y-1; b <= y+1   ;b++)
+        {
+          pr += float(z -> GetPixel(a,b).r)*edge[x-a+1][y-b+1];
+          pg += float(z -> GetPixel(a,b).g)*edge[x-a+1][y-b+1];
+          pb += float(z -> GetPixel(a,b).b)*edge[x-a+1][y-b+1];
+        }
+      }
+      Pixel p;
+      if(pr < 0 || pb <0 || pg <0)
+      {
+        pr =0;
+        pg =0;
+        pb =0;
+      }
+      p.Set(pr,pg,pb);
+      SetPixel(x,y,p);
+    }
+  }
 }
 
 
 Image* Image::Scale(double sx, double sy)
 {
+  Image* z = new Image (sx*Width(),sy*Height());
+  for(int i=1 ; i < sx*Width() -1 ; i++)
+  {
+    for(int j = 1; j< sy*Height() - 1; j++)
+    {
+      //  z->GetPixel(i/sx,j/sy)
+      int rx = ceil(i/sx);
+      int ry = ceil(j/sy);
+      int lx = floor(i/sx);
+      int ly = floor(j/sy);
+      // if((i/sx )/ 1 == 0)
+      // {
+      //     rx = i/sx + 1;
+      //     lx = j/sy;
+      // }
+      // if((j/sy) / 1 ==0)
+      // {
+      //   ry = j/sy + 1;
+      //   ly = j/sy;
+      // }
+      // if(i/sx == Width() -1 )
+      // {
+      //   rx = i/sx;
+      //   lx = i/sx - 1;
+      // }
+      // if(j/sy == Height() - 1)
+      // {
+      //   ry = j/sy;
+      //   ly = (j/sy) - 1;
+      // }
+
+    Pixel x1 = PixelLerp(GetPixel(lx,ry),GetPixel(rx,ry),(i/sx) - lx);
+    Pixel x2 = PixelLerp(GetPixel(lx,ly),GetPixel(rx,ly),(i/sx) - lx);
+    Pixel f = PixelLerp(x1,x2,(j/sy) - ly);
+    z->SetPixel(i,j,f);
+
+    }
+  }
+
+
+
+
 	/* WORK HERE */
-	return NULL;
+	return z;
 }
 
 Image* Image::Rotate(double angle)
