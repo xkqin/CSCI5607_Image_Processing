@@ -238,17 +238,6 @@ void Image::RandomDither (int nbits)
 	/* WORK HERE */
 //   int x,y;
  float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
-//
-//   for (x = 0 ; x < Width() ; x++)
-//   {
-//     for (y = 0 ; y < Height() ; y++)
-//     {
-//       Pixel p = GetPixel(x, y);
-//       Pixel scaled_p = PixelQuant(p,nbits);
-//       GetPixel(x,y) = scaled_p;
-//     }
-//   }
-//   this -> AddNoise(1);
 int l = pow(2,nbits);
 double a = 256 / l;
 double b = 255.0/(l - 1);
@@ -258,13 +247,21 @@ for (x = 0 ; x < Width() ; x++)
   for (y = 0 ; y < Height() ; y++)
   {
     Pixel p = GetPixel(x, y);
-    PixelQuant(p,nbits);
-    p.SetClamp((p.r/a + noise)*b,
-  (p.g/a + noise)*b,
-  (p.b/a + noise)*b);
+    p = PixelQuantN(p,nbits);
     GetPixel(x,y) = p;
   }
 }
+// for (x = 0 ; x < Width() ; x++)
+// {
+//   for (y = 0 ; y < Height() ; y++)
+//   {
+//     Pixel p = GetPixel(x, y);
+//     p.SetClamp(floor(p.r/a + noise)*b,
+//     floor(p.g/a + noise)*b,
+//     floor(p.b/a + noise)*b);
+//     GetPixel(x,y) = p;
+//   }
+// }
 
 }
 
@@ -289,9 +286,9 @@ void Image::OrderedDither(int nbits)
     for (y = 0 ; y < Height() ; y++)
     {
       Pixel p = GetPixel(x, y);
-      p.SetClamp((p.r / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b,
-      (p.g / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b,
-      (p.b / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b);
+      p.SetClamp(floor(p.r / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b,
+      floor(p.g / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b,
+      floor(p.b / a - 0.5 + Bayer4[x%4][y%4] / 15.0)*b);
       GetPixel(x,y) = p;
     }
   }
@@ -315,9 +312,9 @@ void Image::FloydSteinbergDither(int nbits)
       Pixel p = GetPixel(x, y);
       Pixel scaled_p =PixelQuant(p,nbits);
       GetPixel(x, y) = scaled_p;
-      Pixel diff =  scaled_p + p;
+
        GetPixel(x+1,y) + ALPHA * diff;
-     GetPixel(x-1,y+1) + BETA * diff;
+       GetPixel(x-1,y+1) + BETA * diff;
          GetPixel(x,y+1) + GAMMA * diff;
         GetPixel(x+1,y+1) + DELTA * diff;
 
