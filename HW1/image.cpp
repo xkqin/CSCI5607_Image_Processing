@@ -308,18 +308,20 @@ const double
 void Image::FloydSteinbergDither(int nbits)
 {
   int x,y;
+    Image* z = new Image (Width(),Height());
   for (x = 0 ; x < Width() ; x++)
   {
     for (y = 0 ; y < Height() ; y++)
     {
-      Pixel p = GetPixel(x, y);
-      Pixel scaled_p =PixelQuant(p,nbits);
-      GetPixel(x, y) = scaled_p;
-      Pixel diff =  scaled_p + p;
-       GetPixel(x+1,y) + ALPHA * diff;
-     GetPixel(x-1,y+1) + BETA * diff;
-         GetPixel(x,y+1) + GAMMA * diff;
-        GetPixel(x+1,y+1) + DELTA * diff;
+      Pixel oldp = z->GetPixel(x, y);
+      Pixel newp = PixelQuant(oldp,nbits);
+//      GetPixel(x, y) = scaled_p;
+    //   z-> SetPixel(x,y);
+    //   Pixel diff =  newp - p;
+    //    GetPixel(x+1,y) + ALPHA * diff;
+    //  GetPixel(x-1,y+1) + BETA * diff;
+    //      GetPixel(x,y+1) + GAMMA * diff;
+    //     GetPixel(x+1,y+1) + DELTA * diff;
 
     }
   }
@@ -475,26 +477,6 @@ Image* Image::Scale(double sx, double sy)
       int ry = ceil(j/sy);
       int lx = floor(i/sx);
       int ly = floor(j/sy);
-      // if((i/sx )/ 1 == 0)
-      // {
-      //     rx = i/sx + 1;
-      //     lx = j/sy;
-      // }
-      // if((j/sy) / 1 ==0)
-      // {
-      //   ry = j/sy + 1;
-      //   ly = j/sy;
-      // }
-      // if(i/sx == Width() -1 )
-      // {
-      //   rx = i/sx;
-      //   lx = i/sx - 1;
-      // }
-      // if(j/sy == Height() - 1)
-      // {
-      //   ry = j/sy;
-      //   ly = (j/sy) - 1;
-      // }
 
     Pixel x1 = PixelLerp(GetPixel(lx,ry),GetPixel(rx,ry),(i/sx) - lx);
     Pixel x2 = PixelLerp(GetPixel(lx,ly),GetPixel(rx,ly),(i/sx) - lx);
