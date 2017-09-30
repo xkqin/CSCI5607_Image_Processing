@@ -121,6 +121,6 @@ Pixel PixelQuantN( const Pixel &p, int nbits)
 	new_b = (p.b >> shift);
 	Pixel ret;
     float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
-	ret.SetClamp((new_r+noise)*mult , (new_g+(noise))*mult , (new_b+noise)*mult );
+	ret.SetClamp(floor(new_r+noise)*mult , floor(new_g+(noise))*mult , floor(new_b+noise)*mult );
 	return ret;
 }
