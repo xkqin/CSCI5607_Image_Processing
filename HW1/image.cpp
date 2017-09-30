@@ -305,31 +305,35 @@ const double
 void Image::FloydSteinbergDither(int nbits)
 {
   int x,y;
-    Image* z = new Image (Width(),Height());
-  for (x = 0 ; x < Width() ; x++)
+//    Image* z = new Image (Width(),Height());
+  for (x = 1 ; x < Width()-1 ; x++)
   {
-    for (y = 0 ; y < Height() ; y++)
+    for (y = 1 ; y < Height()-1 ; y++)
     {
-<<<<<<< HEAD
-      Pixel oldp = z->GetPixel(x, y);
+      Pixel oldp = GetPixel(x, y);
       Pixel newp = PixelQuant(oldp,nbits);
-//      GetPixel(x, y) = scaled_p;
-    //   z-> SetPixel(x,y);
-    //   Pixel diff =  newp - p;
-    //    GetPixel(x+1,y) + ALPHA * diff;
-    //  GetPixel(x-1,y+1) + BETA * diff;
-    //      GetPixel(x,y+1) + GAMMA * diff;
-    //     GetPixel(x+1,y+1) + DELTA * diff;
-=======
-      Pixel p = GetPixel(x, y);
-      Pixel scaled_p =PixelQuant(p,nbits);
-      GetPixel(x, y) = scaled_p;
-
-       GetPixel(x+1,y) + ALPHA * diff;
-       GetPixel(x-1,y+1) + BETA * diff;
-         GetPixel(x,y+1) + GAMMA * diff;
-        GetPixel(x+1,y+1) + DELTA * diff;
->>>>>>> 4daeb10c9d52379e8dc0bbaac67302ec67887166
+     //GetPixel(x, y) = scaled_p;
+      SetPixel(x,y,newp);
+      double diffr =  newp.r - oldp.r;
+      double diffg =  newp.g - oldp.g;
+      double diffb =  newp.b - oldp.b;
+      Pixel p1 ;//=  GetPixel(x+1,y) + ALPHA * diff;
+      p1.SetClamp(GetPixel(x+1,y).r + ALPHA * diffr,
+  GetPixel(x+1,y).g + ALPHA * diffg,
+  GetPixel(x+1,y).b + ALPHA * diffb);
+      SetPixel(x+1,y,p1);
+    Pixel p2;// =    GetPixel(x-1,y+1) + BETA * diff;
+    p2.SetClamp(GetPixel(x-1,y+1).r + BETA * diffr,
+  GetPixel(x-1,y+1).g + BETA * diffg,GetPixel(x-1,y+1).b + BETA * diffb);
+    SetPixel(x-1,y+1,p2);
+    Pixel p3;// =    GetPixel(x,y+1) + GAMMA * diff;
+    p3.SetClamp(GetPixel(x,y+1).r + GAMMA * diffr,
+  GetPixel(x,y+1).g + GAMMA * diffg,GetPixel(x,y+1).b + GAMMA * diffb);
+     SetPixel(x,y+1,p3);
+    Pixel p4;// =   GetPixel(x+1,y+1) + DELTA * diff;
+    p4.SetClamp( GetPixel(x+1,y+1).r + DELTA * diffr,
+  GetPixel(x+1,y+1).g + DELTA * diffg,GetPixel(x+1,y+1).b + DELTA * diffb);
+     SetPixel(x+1,y+1,p4);
 
     }
   }
@@ -493,9 +497,6 @@ Image* Image::Scale(double sx, double sy)
 
     }
   }
-
-
-
 
 	/* WORK HERE */
 	return z;
