@@ -236,19 +236,36 @@ void Image::Quantize (int nbits)
 void Image::RandomDither (int nbits)
 {
 	/* WORK HERE */
-  int x,y;
-//  float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
-
-  for (x = 0 ; x < Width() ; x++)
+//   int x,y;
+ float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
+//
+//   for (x = 0 ; x < Width() ; x++)
+//   {
+//     for (y = 0 ; y < Height() ; y++)
+//     {
+//       Pixel p = GetPixel(x, y);
+//       Pixel scaled_p = PixelQuant(p,nbits);
+//       GetPixel(x,y) = scaled_p;
+//     }
+//   }
+//   this -> AddNoise(1);
+int l = pow(2,nbits);
+double a = 256 / l;
+double b = 255.0/(l - 1);
+int x,y;
+for (x = 0 ; x < Width() ; x++)
+{
+  for (y = 0 ; y < Height() ; y++)
   {
-    for (y = 0 ; y < Height() ; y++)
-    {
-      Pixel p = GetPixel(x, y);
-      Pixel scaled_p = PixelQuant(p,nbits);
-      GetPixel(x,y) = scaled_p;
-    }
+    Pixel p = GetPixel(x, y);
+    PixelQuant(p,nbits);
+    p.SetClamp((p.r/a + noise)*b,
+  (p.g/a + noise)*b,
+  (p.b/a + noise)*b);
+    GetPixel(x,y) = p;
   }
-  this -> AddNoise(1);
+}
+
 }
 
 
