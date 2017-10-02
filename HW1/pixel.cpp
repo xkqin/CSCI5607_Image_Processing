@@ -103,24 +103,12 @@ Pixel PixelQuant( const Pixel &p, int nbits)
 {
 	int shift = 8-nbits;
 	float mult = 255/float(255 >> shift);
+
 	int new_r, new_g, new_b;
 	new_r = (p.r >> shift);
 	new_g = (p.g >> shift);
 	new_b = (p.b >> shift);
 	Pixel ret;
 	ret.SetClamp(new_r*mult , new_g*mult , new_b*mult );
-	return ret;
-}
-Pixel PixelQuantN( const Pixel &p, int nbits)
-{
-	int shift = 8-nbits;
-	float mult = 255/float(255 >> shift);
-	int new_r, new_g, new_b;
-	new_r = (p.r >> shift);
-	new_g = (p.g >> shift);
-	new_b = (p.b >> shift);
-	Pixel ret;
-    float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
-	ret.SetClamp(floor(new_r+noise)*mult , floor(new_g+(noise))*mult , floor(new_b+noise)*mult );
 	return ret;
 }

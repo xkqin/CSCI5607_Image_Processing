@@ -45,7 +45,7 @@ public:
        Pixel *pixels;
        uint8_t *raw;
     };
-    
+
     PixelData data;
     //PixelInfo *pixels; //pixel array
     //uint8_t *pixelData;
@@ -154,7 +154,6 @@ public:
 
     // Sets the sampling method.
     void SetSamplingMethod(int method);
-
     // Sample image using current sampling method.
     Pixel Sample(double u, double v);
 };

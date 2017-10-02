@@ -100,7 +100,7 @@ void Image::AddNoise (double factor)
   			Pixel scaled_p;
         scaled_p.SetClamp(p.r + factor*PixelRandom().r,
         p.g+factor*PixelRandom().g,
-        p.b+factor*PixelRandom().b );
+        p.b+factor*PixelRandom().b);
          //    scaled_p.SetClamp(p.r*noise,p.g*noise,p.b*noise);
   			GetPixel(x,y) = scaled_p;
   		}
@@ -143,8 +143,6 @@ void Image::ChangeContrast (double factor)
     {
       Pixel p = GetPixel(x, y);
 			Pixel scaled_p;
-      // mean = p.Luminance();
-      // mean+(p.r-mean)*(factor)
       scaled_p.SetClamp(mean+(p.r-mean)*(factor),mean+(p.g-mean)*(factor),mean+(p.b-mean)*(factor));
 			GetPixel(x,y) = scaled_p;
     }
@@ -161,11 +159,11 @@ void Image::ChangeSaturation(double factor)
   {
     for (y = 0 ; y < Height() ; y++)
     {
-      double a;
+      double sq;
       Pixel p = GetPixel(x, y);
       Pixel scaled_p;
-      a = sqrt(p.r * p.r *0.299 + p.g*p.g*0.587+p.b*p.b*0.144);
-      scaled_p.SetClamp(a+(p.r -a)*factor,a+(p.g -a)*factor,a+(p.b -a)*factor );
+      sq = sqrt(p.r * p.r *0.299 + p.g*p.g*0.587+p.b*p.b*0.144);
+      scaled_p.SetClamp(sq+(p.r -sq)*factor,sq+(p.g -sq)*factor,sq+(p.b -sq)*factor);
       GetPixel(x,y) = scaled_p;
     }
   }
@@ -176,13 +174,13 @@ Image* Image::Crop(int x, int y, int w, int h)
 {
 	/* WORK HERE */
   Image* i = new Image(w,h);
-  int a,b;
-  for (a = 0 ; a < w ; a++)
+  int newx,newy;
+  for (newx = 0 ; newx < w ; newx++)
   {
-    for (b = 0 ; b < h ;b++)
+    for (newy = 0 ; newy < h ;newy++)
     {
-      Pixel p = GetPixel(x+a,y+b);
-      i->SetPixel(a,b,p);
+      Pixel p = GetPixel(x+newx,y+newy);
+      i->SetPixel(newx,newy,p);
     }
   }
 	return i;
@@ -237,31 +235,19 @@ void Image::RandomDither (int nbits)
 {
 	/* WORK HERE */
 //   int x,y;
- float noise = -0.5 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.0)));
-int l = pow(2,nbits);
-double a = 256 / l;
-double b = 255.0/(l - 1);
+
+this -> AddNoise(0.4);
 int x,y;
 for (x = 0 ; x < Width() ; x++)
 {
   for (y = 0 ; y < Height() ; y++)
   {
     Pixel p = GetPixel(x, y);
-    p = PixelQuantN(p,nbits);
+
+    p = PixelQuant(p,nbits);
     GetPixel(x,y) = p;
   }
 }
-// for (x = 0 ; x < Width() ; x++)
-// {
-//   for (y = 0 ; y < Height() ; y++)
-//   {
-//     Pixel p = GetPixel(x, y);
-//     p.SetClamp(floor(p.r/a + noise)*b,
-//     floor(p.g/a + noise)*b,
-//     floor(p.b/a + noise)*b);
-//     GetPixel(x,y) = p;
-//   }
-// }
 
 }
 
@@ -314,26 +300,24 @@ void Image::FloydSteinbergDither(int nbits)
       Pixel newp = PixelQuant(oldp,nbits);
      //GetPixel(x, y) = scaled_p;
       SetPixel(x,y,newp);
-      double diffr =  newp.r - oldp.r;
-      double diffg =  newp.g - oldp.g;
-      double diffb =  newp.b - oldp.b;
-      Pixel p1 ;//=  GetPixel(x+1,y) + ALPHA * diff;
-      p1.SetClamp(GetPixel(x+1,y).r + ALPHA * diffr,
-  GetPixel(x+1,y).g + ALPHA * diffg,
-  GetPixel(x+1,y).b + ALPHA * diffb);
-      SetPixel(x+1,y,p1);
-    Pixel p2;// =    GetPixel(x-1,y+1) + BETA * diff;
-    p2.SetClamp(GetPixel(x-1,y+1).r + BETA * diffr,
-  GetPixel(x-1,y+1).g + BETA * diffg,GetPixel(x-1,y+1).b + BETA * diffb);
-    SetPixel(x-1,y+1,p2);
-    Pixel p3;// =    GetPixel(x,y+1) + GAMMA * diff;
-    p3.SetClamp(GetPixel(x,y+1).r + GAMMA * diffr,
-  GetPixel(x,y+1).g + GAMMA * diffg,GetPixel(x,y+1).b + GAMMA * diffb);
-     SetPixel(x,y+1,p3);
-    Pixel p4;// =   GetPixel(x+1,y+1) + DELTA * diff;
-    p4.SetClamp( GetPixel(x+1,y+1).r + DELTA * diffr,
-  GetPixel(x+1,y+1).g + DELTA * diffg,GetPixel(x+1,y+1).b + DELTA * diffb);
-     SetPixel(x+1,y+1,p4);
+      double diffr =  oldp.r - newp.r;
+      double diffg =  oldp.g - newp.g;
+      double diffb =  oldp.b - newp.b;
+      GetPixel(x+1,y).r += ALPHA * diffr;
+      GetPixel(x+1,y).g += ALPHA * diffg;
+      GetPixel(x+1,y).b += ALPHA * diffb;
+
+      GetPixel(x-1,y+1).r += BETA * diffr;
+      GetPixel(x-1,y+1).g += BETA * diffg;
+      GetPixel(x-1,y+1).b += BETA * diffb;
+
+      GetPixel(x,y+1).r += GAMMA * diffr;
+      GetPixel(x,y+1).g += GAMMA * diffg;
+      GetPixel(x,y+1).b += GAMMA * diffb;
+
+      GetPixel(x+1,y+1).r += DELTA * diffr;
+      GetPixel(x+1,y+1).g += DELTA * diffg;
+      GetPixel(x+1,y+1).b += DELTA * diffb;
 
     }
   }
@@ -361,26 +345,26 @@ void Image::Blur(int n)
   {
     for (y = n; y <= Height()-n-1 ; y++)
     {
-         double pr=0;
-         double pg=0;
-         double pb=0;
+         double prSum=0;
+         double pgSum=0;
+         double pbSum=0;
       for (int a = x-n; a <=  x+n; a++)
       {
         for (int b = y-n; b <= y+n; b++)
         {
-          pr += float(z -> GetPixel(a,b).r)*gaussian(x-a,y-b);
-          pg += float(z -> GetPixel(a,b).g)*gaussian(x-a,y-b);
-          pb += float(z -> GetPixel(a,b).b)*gaussian(x-a,y-b);
+          prSum += float(z -> GetPixel(a,b).r)*gaussian(x-a,y-b);
+          pgSum += float(z -> GetPixel(a,b).g)*gaussian(x-a,y-b);
+          pbSum += float(z -> GetPixel(a,b).b)*gaussian(x-a,y-b);
         }
       }
       Pixel p;
-      if(pr < 0 || pb <0 || pg <0)
+      if(prSum < 0 || pgSum <0 || pbSum <0)
       {
-        pr =0;
-        pg =0;
-        pb =0;
+        prSum =0;
+        pgSum =0;
+        pbSum =0;
       }
-      p.Set(pr,pg,pb);
+      p.Set(prSum,pgSum,pbSum);
       SetPixel(x,y,p);
     }
   }
@@ -451,9 +435,7 @@ void Image::EdgeDetect()
 
     for (y = 1 ; y < Height()-1 ; y++)
     {
-         double pr=0;
-         double pg=0;
-         double pb=0;
+         double pr=0,pg=0,pb=0;
       for (int a = x-1; a <=  x+1  ;a++)
       {
         for (int b = y-1; b <= y+1   ;b++)
@@ -463,54 +445,163 @@ void Image::EdgeDetect()
           pb += float(z -> GetPixel(a,b).b)*edge[x-a+1][y-b+1];
         }
       }
-      Pixel p;
+
       if(pr < 0 || pb <0 || pg <0)
       {
         pr =0;
         pg =0;
         pb =0;
       }
-      p.Set(pr,pg,pb);
-      SetPixel(x,y,p);
+      Pixel p;
+      p.SetClamp(pr,pg,pb);
+      GetPixel(x,y) = p;
     }
   }
 }
-
-
 Image* Image::Scale(double sx, double sy)
 {
   Image* z = new Image (sx*Width(),sy*Height());
+
   for(int i=1 ; i < sx*Width() -1 ; i++)
   {
     for(int j = 1; j< sy*Height() - 1; j++)
     {
-      //  z->GetPixel(i/sx,j/sy)
-      int rx = ceil(i/sx);
-      int ry = ceil(j/sy);
-      int lx = floor(i/sx);
-      int ly = floor(j/sy);
-
-    Pixel x1 = PixelLerp(GetPixel(lx,ry),GetPixel(rx,ry),(i/sx) - lx);
-    Pixel x2 = PixelLerp(GetPixel(lx,ly),GetPixel(rx,ly),(i/sx) - lx);
-    Pixel f = PixelLerp(x1,x2,(j/sy) - ly);
+    SetSamplingMethod(IMAGE_SAMPLING_GAUSSIAN);
+    Pixel f = Sample(i/sx,j/sy);
     z->SetPixel(i,j,f);
-
     }
   }
 
 	/* WORK HERE */
 	return z;
 }
-
 Image* Image::Rotate(double angle)
 {
 	/* WORK HERE */
-	return NULL;
+    /* Reverse Mapping*/
+    Image * z;
+    angle = fmod(angle, 360);
+    float an = angle*3.1415926/180;
+    if((angle>=0 && angle<=90)||(angle>=-360 && angle<=-270))
+    {
+        float height = Height()*cos(an)+Width()*sin(an);
+        float width = Width()*cos(an)+Height()*sin(an);
+        z = new Image(width,height);
+        float s = Width()*sin(an);
+        for(int i=0; i<z->Width(); i++)
+        {
+            for(int j=0; j<z->Height(); j++)
+            {
+                float x = i*cos(an)-(j-s)*sin(an);
+                float y = i*sin(an)+(j-s)*cos(an);
+                SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
+                Pixel p = Sample(x, y);
+                z->SetPixel(i, j, p);
+            }
+        }
+    }
+
+    else if((angle>90 && angle<=180)||(angle>=-270 && angle<=-180))
+    {
+        float height = -Height()*cos(an)+Width()*sin(an);
+        float width = -Width()*cos(an)+Height()*sin(an);
+        z = new Image(width,height);
+        float sx = -Width()*cos(an);
+        float sy = height;
+        for(int i=0; i<z->Width(); i++)
+        {
+            for(int j=0; j<z->Height(); j++)
+            {
+                float x = (i-sx)*cos(an)-(j-sy)*sin(an);
+                float y = (i-sx)*sin(an)+(j-sy)*cos(an);
+                SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
+                Pixel p = Sample(x, y);
+                z->SetPixel(i, j, p);
+            }
+        }
+    }
+
+    else if((angle>180 && angle<=270)||(angle>=-180 && angle<=-90))
+    {
+
+        float height = -Height()*cos(an)-Width()*sin(an);
+        float width = -Width()*cos(an)-Height()*sin(an);
+        z = new Image(width,height);
+        float sx = width;
+        float sy = -Height()*cos(an);
+        for(int i=0; i<z->Width(); i++)
+        {
+            for(int j=0; j<z->Height(); j++)
+            {
+                float x = (i-sx)*cos(an)-(j-sy)*sin(an);
+                float y = (i-sx)*sin(an)+(j-sy)*cos(an);
+                SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
+                Pixel p = Sample(x, y);
+                z->SetPixel(i, j, p);
+            }
+        }
+    }
+
+        else if((angle>270 && angle<=360)||(angle>=-90 && angle<=0))
+        {
+
+
+            float height = Height()*cos(an)-Width()*sin(an);
+            float width = Width()*cos(an)-Height()*sin(an);
+            z = new Image(width,height);
+            float sx = -Height()*sin(an);
+            for(int i=0; i<z->Width(); i++)
+            {
+                for(int j=0; j<z->Height(); j++)
+                {
+                    float x = (i-sx)*cos(an)-(j)*sin(an);
+                    float y = (i-sx)*sin(an)+(j)*cos(an);
+                    SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
+                    Pixel p = Sample(x, y);
+                    z->SetPixel(i, j, p);
+                }
+            }
+        }
+
+	return z;
 }
 
 void Image::Fun()
 {
-	/* WORK HERE */
+
+    Image * z = new Image(Width(),Height());
+
+    for(int i=0; i<Width(); i++)
+    {
+        for(int j=0; j<Height(); j++)
+        {
+            z->SetPixel(i, j, GetPixel(i, j));
+        }
+    }
+
+    for(int i=0; i<Width(); i++)
+    {
+        for(int j=0; j<Height(); j++)
+        {
+            double u = i-(10*sin(3.141592653579*j/300));
+            double v = j-(50*cos(3.141592653579*i/100));
+            int rx = ceil(u);
+            int ry = ceil(v);
+            int lx = floor(u);
+            int ly = floor(v);
+            Pixel p;
+            if(rx<Width() && ry<Height() && lx>=0 && ly>=0)
+            {
+                Pixel x1 = PixelLerp(z->GetPixel(lx,ry),z->GetPixel(rx,ry),u - lx);
+                Pixel x2 = PixelLerp(z->GetPixel(lx,ly),z->GetPixel(rx,ly),u - lx);
+                p = PixelLerp(x1,x2, v - ly);
+            }
+            else{
+                p = Pixel(0,0,0);
+            }
+            SetPixel(i, j, p);
+        }
+    }
 }
 
 /**
@@ -525,5 +616,51 @@ void Image::SetSamplingMethod(int method)
 
 Pixel Image::Sample (double u, double v){
     /* WORK HERE */
-	return Pixel();
+	if(sampling_method == IMAGE_SAMPLING_POINT)
+    {
+        return GetPixel(round(u),round(v));
+    }
+
+    if(sampling_method == IMAGE_SAMPLING_BILINEAR)
+    {
+      int rx = ceil(u);
+      int ry = ceil(v);
+      int lx = floor(u);
+      int ly = floor(v);
+      if(rx<Width() && ry<Height() && lx>0 && ly>0)
+      {
+
+        Pixel x1 = PixelLerp(GetPixel(lx,ry),GetPixel(rx,ry),(u) - lx);
+        Pixel x2 = PixelLerp(GetPixel(lx,ly),GetPixel(rx,ly),(u) - lx);
+        Pixel f = PixelLerp(x1,x2,(v) - ly);
+          return f;
+      }
+      else{
+          Pixel p;
+          p.SetClamp(0, 0, 0);
+          return p;
+      }
+
+    }
+
+    if(sampling_method == IMAGE_SAMPLING_GAUSSIAN)
+    {
+      float prSum = 0,pgSum = 0,pbSum = 0;
+       for (int a = u-3; a <=  u+3; a++)
+       {
+        for (int b = v-3; b <= v+3; b++)
+          {
+          if(a<Width() && b<Height() && a>=0 && b>=0)
+          {
+          prSum += float( GetPixel(a,b).r)*gaussian(u-a,v-b);
+          pgSum += float(GetPixel(a,b).g)*gaussian(u-a,v-b);
+          pbSum += float( GetPixel(a,b).b)*gaussian(u-a,v-b);
+          }
+        }
+      }
+      Pixel p;
+      p.SetClamp(prSum,pgSum,pbSum);
+      return p;
+    }
+    return Pixel();
 }
