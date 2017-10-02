@@ -95,13 +95,11 @@ void Image::AddNoise (double factor)
   	{
   		for (y = 0 ; y < Height() ; y++)
   		{
-    //    noise = pow(fabs(((double)rand() / (double) (RAND_MAX))*range - 1) , 8);
   			Pixel p = GetPixel(x, y);
   			Pixel scaled_p;
         scaled_p.SetClamp(p.r + factor*PixelRandom().r,
         p.g+factor*PixelRandom().g,
         p.b+factor*PixelRandom().b);
-         //    scaled_p.SetClamp(p.r*noise,p.g*noise,p.b*noise);
   			GetPixel(x,y) = scaled_p;
   		}
   	}
@@ -475,107 +473,90 @@ Image* Image::Scale(double sx, double sy)
 	/* WORK HERE */
 	return z;
 }
+
 Image* Image::Rotate(double angle)
 {
 	/* WORK HERE */
-    /* Reverse Mapping*/
-    Image * z;
-    angle = fmod(angle, 360);
-    float an = angle*3.1415926/180;
-    if((angle>=0 && angle<=90)||(angle>=-360 && angle<=-270))
-    {
-        float height = Height()*cos(an)+Width()*sin(an);
-        float width = Width()*cos(an)+Height()*sin(an);
-        z = new Image(width,height);
-        float s = Width()*sin(an);
-        for(int i=0; i<z->Width(); i++)
-        {
-            for(int j=0; j<z->Height(); j++)
-            {
-                float x = i*cos(an)-(j-s)*sin(an);
-                float y = i*sin(an)+(j-s)*cos(an);
-                SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
-                Pixel p = Sample(x, y);
-                z->SetPixel(i, j, p);
-            }
-        }
-    }
+	angle = fmod(fabs(angle),360);
+	float an = angle*3.141592653579 / 180;
+	float h = Height()*fabs(cos(an)) + Width()*fabs(sin(an));
+	float w = Height()*fabs(sin(an)) + Width()*fabs(cos(an));
+	Image * z = new Image(h, w);
+	if (angle <= 90) {
+		float s = Width()*sin(an);
+		for (int i = 0; i < z->Width(); i++) {
+			for (int j = 0; j < z->Height(); j++) {
+				float xx = i*cos(an) - (j - s)*sin(an);
+				float yy = i*sin(an) + (j - s)*cos(an);
+        	SetSamplingMethod(IMAGE_SAMPLING_GAUSSIAN);
+				Pixel p = Sample(xx, yy);
+				z->GetPixel(i, j) = p;
+			}
+		}
+		return z;
+	}
+	else if (angle > 90 && angle <= 180) {
+		float sx = fabs(Width()*cos(an));
+		float sy = h;
+		for (int i = 0; i < z->Width(); i++) {
+			for (int j = 0; j < z->Height(); j++) {
+				float xx = (i-sx)*cos(an) - (j - sy)*sin(an);
+				float yy = (i-sx)*sin(an) + (j - sy)*cos(an);
+        	SetSamplingMethod(IMAGE_SAMPLING_GAUSSIAN);
+				Pixel p = Sample(xx, yy);
+				z->GetPixel(i, j) = p;
+			}
+		}
+		return z;
+	}
 
-    else if((angle>90 && angle<=180)||(angle>=-270 && angle<=-180))
-    {
-        float height = -Height()*cos(an)+Width()*sin(an);
-        float width = -Width()*cos(an)+Height()*sin(an);
-        z = new Image(width,height);
-        float sx = -Width()*cos(an);
-        float sy = height;
-        for(int i=0; i<z->Width(); i++)
-        {
-            for(int j=0; j<z->Height(); j++)
-            {
-                float x = (i-sx)*cos(an)-(j-sy)*sin(an);
-                float y = (i-sx)*sin(an)+(j-sy)*cos(an);
-                SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
-                Pixel p = Sample(x, y);
-                z->SetPixel(i, j, p);
-            }
-        }
-    }
-
-    else if((angle>180 && angle<=270)||(angle>=-180 && angle<=-90))
-    {
-
-        float height = -Height()*cos(an)-Width()*sin(an);
-        float width = -Width()*cos(an)-Height()*sin(an);
-        z = new Image(width,height);
-        float sx = width;
-        float sy = -Height()*cos(an);
-        for(int i=0; i<z->Width(); i++)
-        {
-            for(int j=0; j<z->Height(); j++)
-            {
-                float x = (i-sx)*cos(an)-(j-sy)*sin(an);
-                float y = (i-sx)*sin(an)+(j-sy)*cos(an);
-                SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
-                Pixel p = Sample(x, y);
-                z->SetPixel(i, j, p);
-            }
-        }
-    }
-
-        else if((angle>270 && angle<=360)||(angle>=-90 && angle<=0))
-        {
-
-
-            float height = Height()*cos(an)-Width()*sin(an);
-            float width = Width()*cos(an)-Height()*sin(an);
-            z = new Image(width,height);
-            float sx = -Height()*sin(an);
+	else if (angle > 180 && angle <= 270) {
+            float h = -Height()*cos(an)-Width()*sin(an);
+            float w = -Width()*cos(an)-Height()*sin(an);
+            z = new Image(h,w);
+            float sx = Width();
+            float sy = -Height()*cos(an);
             for(int i=0; i<z->Width(); i++)
             {
                 for(int j=0; j<z->Height(); j++)
                 {
-                    float x = (i-sx)*cos(an)-(j)*sin(an);
-                    float y = (i-sx)*sin(an)+(j)*cos(an);
-                    SetSamplingMethod(IMAGE_SAMPLING_BILINEAR);
+                    float x = (i-sx)*cos(an)-(j-sy)*sin(an);
+                    float y = (i-sx)*sin(an)+(j-sy)*cos(an);
+                    	SetSamplingMethod(IMAGE_SAMPLING_GAUSSIAN);
                     Pixel p = Sample(x, y);
                     z->SetPixel(i, j, p);
                 }
             }
-        }
+		return z;
+	}
+	else if (angle > 270) {
+		float sx = Height()*fabs(sin(an));
+		for (int i = 0; i < z->Width(); i++) {
+			for (int j = 0; j < z->Height(); j++) {
+				float xx = (i - sx)*cos(an) - j*sin(an);
+				float yy = (i - sx)*sin(an) + j*cos(an);
+        	SetSamplingMethod(IMAGE_SAMPLING_GAUSSIAN);
+				Pixel p = Sample(xx, yy);
+				z->GetPixel(i, j) = p;
+			}
+		}
+		return z;
+
+
+	}
 
 	return z;
 }
-
 void Image::Fun()
 {
 
     Image * z = new Image(Width(),Height());
 
-    for(int i=0; i<Width(); i++)
+    for(int x=0; x<Width(); x++)
     {
-        for(int j=0; j<Height(); j++)
+        for(int y=0; y<Height(); y++)
         {
-            z->SetPixel(i, j, GetPixel(i, j));
+            z->SetPixel(x, y, GetPixel(x, y));
         }
     }
 
@@ -585,23 +566,16 @@ void Image::Fun()
         {
             double u = i-(10*sin(3.141592653579*j/300));
             double v = j-(50*cos(3.141592653579*i/100));
-            int rx = ceil(u);
-            int ry = ceil(v);
-            int lx = floor(u);
-            int ly = floor(v);
             Pixel p;
-            if(rx<Width() && ry<Height() && lx>=0 && ly>=0)
+            if(u<Width() && v<Height() && u>=0 && v>=0)
             {
-                Pixel x1 = PixelLerp(z->GetPixel(lx,ry),z->GetPixel(rx,ry),u - lx);
-                Pixel x2 = PixelLerp(z->GetPixel(lx,ly),z->GetPixel(rx,ly),u - lx);
-                p = PixelLerp(x1,x2, v - ly);
-            }
-            else{
-                p = Pixel(0,0,0);
-            }
+              z->SetSamplingMethod(IMAGE_SAMPLING_GAUSSIAN);
+              p = z->Sample(u,v);
+          }
             SetPixel(i, j, p);
         }
     }
+//    this->ChangeSaturation(0);
 }
 
 /**
@@ -618,7 +592,10 @@ Pixel Image::Sample (double u, double v){
     /* WORK HERE */
 	if(sampling_method == IMAGE_SAMPLING_POINT)
     {
+      if(round(u)<Width() && round(v)<Height() && round(u)>=0 && round(v)>=0)
+      {
         return GetPixel(round(u),round(v));
+      }
     }
 
     if(sampling_method == IMAGE_SAMPLING_BILINEAR)
