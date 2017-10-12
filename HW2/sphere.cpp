@@ -3,11 +3,11 @@
 
 
 
-bool sphere::CheckIntersection(Point origin, Vector rayD)
+bool sphere::CheckIntersection(Point ori, Vector rayD)
 {
 	Vector ray = normalize(rayD);
-	float b = ray*(origin - center)*2;
-	float c = (origin - center)*(origin - center) - radius*radius;
+	float b = ray*(ori - center)*2;
+	float c = (ori - center)*(ori - center) - radius*radius;
 	if (b*b - 4 *c >= 0)
 		return true;
 	else
@@ -15,17 +15,15 @@ bool sphere::CheckIntersection(Point origin, Vector rayD)
 }
 
 
-float sphere::calculate_t(Point origin, Vector rayD)
+float sphere::calculate_t(Point ori, Vector rayD)
 {
 
 
 	Vector ray = normalize(rayD);
-    float b = ray*(origin-center)*2;
-    float a = 1;
-    float c = (origin-center)*(origin-center)-radius*radius;
-
-    float t1 = (-b+sqrt(b*b-4*a*c))/(2*a);
-    float t2 = (-b-sqrt(b*b-4*a*c))/(2*a);
+    float b = ray*(ori-center)*2;
+    float c = (ori-center)*(ori-center)-radius*radius;
+    float t1 = (-b+sqrt(b*b-4*c))/2;
+    float t2 = (-b-sqrt(b*b-4*c))/2;
 	float t;
 
 	if (t1 < t2)
@@ -38,8 +36,8 @@ float sphere::calculate_t(Point origin, Vector rayD)
 }
 
 
-Pixel sphere::calcuteColor(std::list<pointLight> pointLightList, std::list<directionalLight> dlList, float amb_r, float amb_g, float amb_b, Point P, Vector rayD,float pn) {
-	Pixel p = calculateAmbLightCol(amb_r, amb_g, amb_b)+calculatePhong(pointLightList,dlList, P, rayD, pn);
+Pixel sphere::calcuteColor(std::list<pointLight> plList, std::list<directionalLight> dlList, float amb_r, float amb_g, float amb_b, Point P, Vector rayD,float pn) {
+	Pixel p = calculateAmbLightCol(amb_r, amb_g, amb_b)+calculatePhong(plList,dlList, P, rayD, pn);
 	return p;
 
 }
@@ -47,47 +45,60 @@ Pixel sphere::calcuteColor(std::list<pointLight> pointLightList, std::list<direc
 
 
 Pixel sphere::calculateAmbLightCol(float amb_r, float amb_g, float amb_b) {
+	if(amb_r > 1)
+	{
+		amb_r = 1;
+	}
+	if(amb_g > 1)
+	{
+		amb_g = 1;
+	}
+	if(amb_b > 1)
+	{
+		amb_b = 1;
+	}
 	return Pixel(255 * amb_r * ar, 255 * amb_g * ag, 255 * amb_b * ab);
 }
 
-Pixel sphere::calculatePhong(std::list<pointLight> pointLightList, std::list<directionalLight> dlList,Point P, Vector rayD, float pn)
+Pixel sphere::calculatePhong(std::list<pointLight> plList, std::list<directionalLight> dlList,Point P, Vector rayD, float pn)
 {
 	float r = 0, g = 0, b = 0;
 
-	for (std::list<pointLight>::iterator next = pointLightList.begin(); next != pointLightList.end(); next++)
+	for (std::list<pointLight>::iterator next = plList.begin(); next != plList.end(); next++)
 	{
 		pointLight plight = *next;
 		Vector v = P - plight.getori();
 		v = Vector(0, 0, 0) - v;
 		v = normalize(v);
-    Vector h = (v - rayD);
+    Vector h = ( rayD - v);
     h =normalize(h);
-		Vector unit_normal = (P-center);
-    unit_normal = normalize(unit_normal);
-		float angle = h*unit_normal;
+		Vector un = (P-center);
+    un = normalize(un);
+		Vector re = v - 2 *(v*un) * un;
+		re = normalize(re);
+		float angle = h*re;
 		float distance = (P - plight.getori())*(P - plight.getori());
-		float factor1 = 0;
+		float a = 0;
 
-		if (angle > factor1) {
-			factor1 = angle;
+		if (angle > a) {
+			a = angle;
 		}
 
-		r += sr*(plight.getLr() / distance)*pow(factor1, pn);
-		g += sg*(plight.getLg() / distance)*pow(factor1, pn);
-		b += sb*(plight.getLb() / distance)*pow(factor1, pn);
+		r += sr*(plight.getLr() / distance)*pow(a, pn);
+		g += sg*(plight.getLg() / distance)*pow(a, pn);
+		b += sb*(plight.getLb() / distance)*pow(a, pn);
 
 
-		float factor2 = 0;
-		float cos2 = v*unit_normal;
+		float b = 0;
+		float angle2 = v*un;
 
-		if (cos2 > factor2) {
-			factor2 = cos2;
+		if (angle2 > b) {
+			b = angle2;
 		}
 
-		r += dr*(plight.getLr() / distance)*factor2;
-		g += dg*(plight.getLg() / distance)*factor2;
-		b += db*(plight.getLb() / distance)*factor2;
-
+		r += dr*(plight.getLr() / distance)*b;
+		g += dg*(plight.getLg() / distance)*b;
+		b += db*(plight.getLb() / distance)*b;
 
 	}
 
@@ -96,32 +107,46 @@ Pixel sphere::calculatePhong(std::list<pointLight> pointLightList, std::list<dir
 		directionalLight dlight = *next;
 		Vector v = dlight.getV();
 		v = Vector(0, 0, 0) - v;
-		Vector h = (v - rayD);
+		Vector h = (rayD - v);
     h =normalize(h);
-    Vector unit_normal = (P-center);
-    unit_normal = normalize(unit_normal);
+    Vector un = (P-center);
+    un = normalize(un);
 
-		float angle = h*unit_normal;
-		float factor1 = 0;
+		Vector re = v - 2 * (v*un) * un;
+		re = normalize(re);
+		float angle = h*re;
+		float a = 0;
 
-		if (angle > factor1) {
-			factor1 = angle;
+		if (angle > a) {
+			a = angle;
 		}
-		r += sr*dlight.getLr()*pow(factor1, pn);
-		g += sg*dlight.getLg()*pow(factor1, pn);
-		b += sb*dlight.getLb()*pow(factor1, pn);
+		r += sr*dlight.getLr()*pow(a, pn);
+		g += sg*dlight.getLg()*pow(a, pn);
+		b += sb*dlight.getLb()*pow(a, pn);
 
-		float cos2 = v*unit_normal;
-		float factor2 = 0;
+		float angle2 = v*un;
+		float b = 0;
 
-		if (cos2 > factor2) {
-			factor2 = cos2;
+		if (angle2 > b) {
+			b = angle2;
 		}
 
-		r += dr*dlight.getLr()*factor2;
-		g += dg*dlight.getLg()*factor2;
-		b += db*dlight.getLb()*factor2;
+		r += dr*dlight.getLr()*b;
+		g += dg*dlight.getLg()*b;
+		b += db*dlight.getLb()*b;
 
+	}
+	if(r > 1)
+	{
+		r = 1;
+	}
+	if(g > 1)
+	{
+		g = 1;
+	}
+	if(b > 1)
+	{
+		b = 1;
 	}
 
 	return Pixel(r * 255, g * 255, b * 255);

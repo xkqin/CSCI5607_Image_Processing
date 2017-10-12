@@ -18,10 +18,6 @@ Vector operator* (const Vector& p, float a)
     return Vector(p.x*a,p.y*a,p.z*a);
 }
 
-Vector operator- (const Vector& p)
-{
-    return Vector(-p.x,-p.y,-p.z);
-}
 
 float operator* (const Vector& p, const Vector& q)
 {

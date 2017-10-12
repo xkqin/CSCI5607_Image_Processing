@@ -27,4 +27,4 @@ Point operator- (const Point& p, const Vector& q);
 
 float operator* (const Vector& p, const Point& q);
 
-#endif 
+#endif

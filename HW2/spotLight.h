@@ -29,8 +29,5 @@ public:
         angle2 = angle2_;
     }
 
-    Vector direction();
-
-    Point getLightColor(Point IntersecP);
 };
-#endif 
+#endif

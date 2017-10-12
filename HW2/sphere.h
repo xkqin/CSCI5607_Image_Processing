@@ -15,12 +15,12 @@ class sphere {
 	float radius;
 	Point center;
 
-	float ar, ag, ab; //ambient color(coefficient)
-	float dr, dg, db; //diffuse color(coefficient)
-	float sr, sg, sb; //specular color(coefficient)
+	float ar, ag, ab;
+	float dr, dg, db;
+	float sr, sg, sb;
 
-	float tr, tg, tb; //transmissive color
-	float ior; //index of refraction
+	float tr, tg, tb; 
+	float ior;
 
 public:
 	sphere(){}

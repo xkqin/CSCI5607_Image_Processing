@@ -36,13 +36,6 @@ list<directionalLight> dlList;
 	char outImage[1024] = "raytraced.bmp";
 int main(int argc, const char * argv[]) {
 	//parse the .scn file
-
-
-
-
-
-
-
   FILE *fp;
   long length;
   int i=0;
@@ -155,8 +148,6 @@ int main(int argc, const char * argv[]) {
 		}
 	}
 
-
-	printf("line number: %d\n", k);
 	Image * img = new Image(width, height);
 
 	for (int i = 0; i<img->Width(); i++)
@@ -170,11 +161,11 @@ int main(int argc, const char * argv[]) {
 
 	Point origin = Point(px, py, pz);
 
-	Vector go = Vector(dx, dy, dz); //viewing direction
+	Vector go = Vector(dx, dy, dz);
 	go = normalize(go);
-	Vector top = Vector(ux, uy, uz);//upward vector
+	Vector top = Vector(ux, uy, uz);
 	top = normalize(top);
-	Vector right = crossProduct(go, top); //rightward basis
+	Vector right = crossProduct(go, top);
 	right = normalize(right);
 
 
@@ -184,7 +175,6 @@ int main(int argc, const char * argv[]) {
 	Point topE = origin + top*(height / 2);
 	Point bottomE = origin - top*(height / 2);
 	float di = height / (2 * tan(ha*3.1415926 / 180));
-    //address each pixel in image
     for (int i = 0; i<width; i++)
 	{
 		for (int j = 0; j<height; j++)
@@ -213,6 +203,6 @@ int main(int argc, const char * argv[]) {
 	}
 
 
-	img->Sharpen(2);
+	img->Blur(1);
 	img->Write(outImage);
 }
